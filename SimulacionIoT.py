@@ -64,11 +64,47 @@ class Simulation:
         room.infection()
         return "La infeccion inicial a comenzado en el piso "+ str(floor.floorid)+ " en la habitacion "+str(room.roomid)
     
+    def infeccion_continua(self):
+        val_ady = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        random.shuffle(val_ady)
+        for i in range(len(self.edificio.nfloors)): # Rango de la lista de pisos dentro del edificio
+            for j in range(len(self.edificio.nfloors[i].nrooms)): # Rango de la lista de habitaciones dentro de cada piso
+                if self.edificio.nfloors[i].nrooms[j].nzombies >= 1: # Cantidad de zombies dentro de la habitacion >= 1
+                    for dx, dy in val_ady: # Posicion de habitaciones adyacentes a la que tiene zombies (arriba, abajo, izquiera y derecha)
+                        x, y = i + dx, j + dy # Habitaciones adyacentes a la que tiene zombies (arriba, abajo, izquiera y derecha)
+                        if x >= 0 and y >= 0:
+                            try:
+                                if random.random() < 0.5: # 50% de que los zombies se propaguen a otras habitaciones
+                                    if self.edificio.nfloors[i].nrooms[j].nzombies > 1:
+                                        self.edificio.nfloors[x].nrooms[y].nzombies += 1
+                                        self.edificio.nfloors[i].nrooms[j].nzombies -= 1
+                                        print("Se han propagado zombies del piso "+str(self.edificio.nfloors[i].floorid)+" habitacion "+str(self.edificio.nfloors[i].nrooms[j].roomid)+" hacia "+str(self.edificio.nfloors[x].floorid)+" habitacion "+str(self.edificio.nfloors[x].nrooms[y].roomid))
+                                        break
+
+                                if random.random() < 0.3: # 30% de que los zombies se trasladen de una habitacion a otra
+                                    self.edificio.nfloors[x].nrooms[y].nzombies += self.edificio.nfloors[i].nrooms[j].nzombies
+                                    self.edificio.nfloors[i].nrooms[j].nzombies = 0
+                                    print("Los zombies se han trasladado al piso "+str(self.edificio.nfloors[x].floorid)+" habitacion "+str(self.edificio.nfloors[x].nrooms[y].roomid))
+                                    break
+                                
+                                if random.random() < 0.5: # 50% de que los zombies aumenten su poblacion en su respectiva habitacion
+                                    self.edificio.nfloors[i].nrooms[j].nzombies += 1
+                                    print("A aumentado la poblacion de zombies en el piso "+str(self.edificio.nfloors[i].floorid)+" habitacion "+str(self.edificio.nfloors[i].nrooms[j].roomid))
+                                    break
+                                
+                                
+
+                                print("Los zombies han permanecido en sus respectivas habitaciones")
+                                break
+                            except:
+                                pass
+        pass
+    
     def building_status(self):
         for i in range(len(self.edificio.nfloors)): # Rango de la lista de pisos dentro del edificio
             print("Estado del piso "+str(i))
             for j in range(len(self.edificio.nfloors[i].nrooms)): # Rango de la lista de habitaciones dentro de cada piso
-                print("Habitacion numero "+str(j) +" "+ str(self.edificio.nfloors[i].nrooms[j].room_status()))
+                print("Habitacion numero "+str(j) +" "+ str(self.edificio.nfloors[i].nrooms[j].room_status()+" zombies: "+str(self.edificio.nfloors[i].nrooms[j].nzombies)))
             pause()
             clear()
 
@@ -107,12 +143,17 @@ def menu_principal():
             case 2:
                 simulation.building_status()
             case 3:
-                if simulation.infection == False:
-                    print(simulation.initial_infection())
-                else:
-                    print("Ya inicio la infeccion que esperas para escapar...")
-                pause()
-                clear()
+                try:
+                    if simulation.infection == False:
+                        print(simulation.initial_infection())
+                    else:
+                        simulation.infeccion_continua()
+                    pause()
+                    clear()
+                except IndexError:
+                    print("Ingrese la configuracion del edificio antes de interactuar con esta opcion")
+                    pause()
+                    clear()
             case 4:
                 pass
             case 5:
